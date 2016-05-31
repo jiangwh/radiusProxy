@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-3.1.xsd 
+	http://www.springframework.org/schema/util
+	http://www.springframework.org/schema/util/spring-util-3.1.xsd "
+	default-lazy-init="true">
+
+	<description>import application context</description>
+	<context:annotation-config />
+	<context:component-scan base-package="com"></context:component-scan>
+	<util:properties id="settings" location="classpath:app.properties"></util:properties>
+
+	<bean id="packetFilters" factory-bean="packetFilterFactory"
+		factory-method="getPacketFilters"></bean>
+
+	<bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean"
+		lazy-init="false">
+		<property name="port" value="8199" />
+	</bean>
+
+	<bean id="serverConnector"
+		class="org.springframework.jmx.support.ConnectorServerFactoryBean"
+		lazy-init="false" depends-on="rmiRegistry">
+		<property name="serviceUrl"
+			value="service:jmx:rmi:///jndi/rmi://localhost:8199/jmxrmi" />
+		<property name="environment">
+			<map>
+				<entry key="jmx.remote.x.password.file" value="etc/security/jmxremote.password" />
+				<entry key="jmx.remote.x.access.file" value="etc/security/jmxremote.access" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="mbeanExporter" class="org.springframework.jmx.export.MBeanExporter"
+		lazy-init="false">
+		<property name="beans">
+			<map>
+				<entry key="springBeans:name=server" value-ref="server" />
+				<entry key="springBeans:name=remoteMonitor" value-ref="remoteMonitor" />
+				<entry key="springBeans:name=configBean" value="configBean"></entry>
+				<entry key="springBeans:name=executor" value="executor"></entry>
+			</map>
+		</property>
+	</bean>
+</beans>
